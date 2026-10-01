@@ -47,7 +47,12 @@ function startPythonBackend() {
     });
 
     pythonProcess.stderr?.on('data', (data) => {
-      console.error(`[Python Backend Error]: ${data.toString().trim()}`);
+      const msg = data.toString().trim();
+      if (/Traceback|Error|Exception/i.test(msg) && !/warning/i.test(msg)) {
+        console.warn(`[Python Backend Alert]: ${msg}`);
+      } else {
+        console.log(`[Python Backend]: ${msg}`);
+      }
     });
 
     pythonProcess.on('exit', (code, signal) => {

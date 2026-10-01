@@ -7,8 +7,12 @@ using yfinance for Python.
 import sys
 import json
 import urllib.parse
+import warnings
 from http.server import HTTPServer, BaseHTTPRequestHandler
 import yfinance as yf
+
+# Suppress standard library and third-party warnings from appearing in stderr
+warnings.filterwarnings('ignore')
 
 PORT = 5001
 
@@ -151,6 +155,11 @@ def get_quote_data(raw_ticker: str):
     }
 
 class YFinanceHandler(BaseHTTPRequestHandler):
+    def log_message(self, format, *args):
+        # Override BaseHTTPRequestHandler.log_message so normal access logs don't write to stderr
+        sys.stdout.write("%s - - [%s] %s\n" % (self.address_string(), self.log_date_time_string(), format % args))
+        sys.stdout.flush()
+
     def _send_json(self, status: int, data: dict):
         response_bytes = json.dumps(data).encode('utf-8')
         self.send_response(status)
