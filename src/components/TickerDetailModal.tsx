@@ -1,7 +1,8 @@
-import React, { useState, useMemo } from 'react';
-import { X, Star, TrendingUp, TrendingDown, ArrowUpRight, ArrowDownRight, CheckCircle2, DollarSign } from 'lucide-react';
+import React, { useState, useMemo, useEffect } from 'react';
+import { X, Star, TrendingUp, TrendingDown, ArrowUpRight, ArrowDownRight, CheckCircle2, DollarSign, Activity } from 'lucide-react';
 import { MarketItem } from '../types/market';
 import { generateChartData } from '../data/marketData';
+import { fetchLiveHistory } from '../services/yfinanceApi';
 
 interface TickerDetailModalProps {
   item: MarketItem | null;
@@ -22,16 +23,54 @@ export const TickerDetailModal: React.FC<TickerDetailModalProps> = ({
   const [orderType, setOrderType] = useState<'buy' | 'sell'>('buy');
   const [orderShares, setOrderShares] = useState('10');
   const [orderSuccess, setOrderSuccess] = useState<string | null>(null);
+  const [liveHistory, setLiveHistory] = useState<Array<{ time: string; price: number; volume?: number }> | null>(null);
+  const [isHistoryLoading, setIsHistoryLoading] = useState(false);
+
+  // Fetch real yfinance historical data when ticker or timeframe changes
+  useEffect(() => {
+    if (!item?.ticker) return;
+
+    let period = '1d';
+    let interval = '5m';
+    if (timeframe === '5D') {
+      period = '5d';
+      interval = '15m';
+    } else if (timeframe === '1M') {
+      period = '1mo';
+      interval = '1d';
+    } else if (timeframe === '6M') {
+      period = '6mo';
+      interval = '1d';
+    } else if (timeframe === '1Y') {
+      period = '1y';
+      interval = '1wk';
+    }
+
+    setIsHistoryLoading(true);
+    fetchLiveHistory(item.ticker, period, interval)
+      .then((hist) => {
+        if (hist && hist.length > 5) {
+          setLiveHistory(hist);
+        } else {
+          setLiveHistory(null);
+        }
+      })
+      .catch(() => setLiveHistory(null))
+      .finally(() => setIsHistoryLoading(false));
+  }, [item?.ticker, timeframe]);
 
   if (!item) return null;
 
   const isPositive = item.changePercent >= 0;
   const strokeColor = isPositive ? '#089981' : '#f23645';
 
-  // Generate historical data points for chart
+  // Use real yfinance historical points if available, otherwise synthetic fallback
   const chartPoints = useMemo(() => {
+    if (liveHistory && liveHistory.length > 5) {
+      return liveHistory;
+    }
     return generateChartData(item.price, timeframe, isPositive);
-  }, [item.price, timeframe, isPositive]);
+  }, [liveHistory, item.price, timeframe, isPositive]);
 
   // Compute SVG coordinates
   const minPrice = Math.min(...chartPoints.map((p) => p.price));
@@ -105,9 +144,9 @@ export const TickerDetailModal: React.FC<TickerDetailModalProps> = ({
                 <span className="text-xs font-semibold px-2 py-0.5 rounded bg-[#f0f3fa] text-[#787b86]">
                   {item.category}
                 </span>
-                <span className="text-xs text-emerald-600 font-medium flex items-center gap-1">
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                  Live Market
+                <span className="text-xs text-blue-700 font-medium flex items-center gap-1 bg-blue-50 px-2 py-0.5 rounded-full border border-blue-100">
+                  <Activity className="w-3 h-3 text-blue-600" />
+                  yfinance Python Live
                 </span>
               </div>
               <p className="text-xs text-[#787b86]">{item.name}</p>

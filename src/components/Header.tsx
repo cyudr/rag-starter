@@ -6,6 +6,7 @@ interface HeaderProps {
   onOpenAuth: () => void;
   liveUpdates: boolean;
   onToggleLive: () => void;
+  yfinanceConnected?: boolean;
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -13,6 +14,7 @@ export const Header: React.FC<HeaderProps> = ({
   onOpenAuth,
   liveUpdates,
   onToggleLive,
+  yfinanceConnected = true,
 }) => {
   const [activeDropdown, setActiveDropdown] = useState<string | null>(null);
   const [currentLang, setCurrentLang] = useState('EN');
@@ -194,6 +196,15 @@ export const Header: React.FC<HeaderProps> = ({
 
         {/* Right Side Utilities */}
         <div className="flex items-center gap-3 sm:gap-4">
+          {/* Python yfinance backend status */}
+          <div
+            title={yfinanceConnected ? 'Python yfinance backend connected' : 'Python yfinance initializing'}
+            className="hidden lg:flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium border bg-blue-50 text-blue-700 border-blue-200"
+          >
+            <span className="w-2 h-2 rounded-full bg-blue-600 animate-pulse" />
+            <span className="font-semibold">yfinance Python</span>
+          </div>
+
           {/* Live Data Simulation Toggle */}
           <button
             onClick={onToggleLive}

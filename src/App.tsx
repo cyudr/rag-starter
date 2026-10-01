@@ -10,6 +10,7 @@ import { AuthModal } from './components/AuthModal';
 import { Footer } from './components/Footer';
 import { MarketCategory, MarketItem, WatchlistState } from './types/market';
 import { CATEGORY_HIGHLIGHTS, CATEGORY_TABLE_DATA } from './data/marketData';
+import { fetchBatchQuotes } from './services/yfinanceApi';
 
 export default function App() {
   const [currentCategory, setCurrentCategory] = useState<MarketCategory>('US stocks');
@@ -20,6 +21,7 @@ export default function App() {
   const [isAuthOpen, setIsAuthOpen] = useState(false);
   const [liveUpdates, setLiveUpdates] = useState(true);
   const [flashStates, setFlashStates] = useState<Record<string, 'up' | 'down' | null>>({});
+  const [yfinanceConnected, setYfinanceConnected] = useState(true);
 
   // LocalStorage-backed Watchlist
   const [watchlist, setWatchlist] = useState<WatchlistState>(() => {
@@ -42,6 +44,80 @@ export default function App() {
       return next;
     });
   };
+
+  // Fetch real-time quotes from yfinance Python backend
+  useEffect(() => {
+    const targetCards = categoryData[currentCategory]?.cards || [];
+    const targetRows = tableData[currentCategory] || [];
+    const tickersToFetch = Array.from(
+      new Set([...targetCards.map((c) => c.ticker), ...targetRows.map((r) => r.ticker)])
+    );
+
+    if (tickersToFetch.length === 0) return;
+
+    fetchBatchQuotes(tickersToFetch)
+      .then((quotesMap) => {
+        if (!quotesMap || Object.keys(quotesMap).length === 0) return;
+        setYfinanceConnected(true);
+
+        // Update cards
+        setCategoryData((prev) => {
+          const cat = prev[currentCategory];
+          if (!cat) return prev;
+          const updatedCards = cat.cards.map((card) => {
+            const live = quotesMap[card.ticker];
+            if (!live) return card;
+            return {
+              ...card,
+              price: live.price ?? card.price,
+              changePercent: live.changePercent ?? card.changePercent,
+              changeAmount: live.changeAmount ?? card.changeAmount,
+              volume: live.volume || card.volume,
+              marketCap: live.marketCap || card.marketCap,
+              dayLow: live.dayLow ?? card.dayLow,
+              dayHigh: live.dayHigh ?? card.dayHigh,
+              yearLow: live.yearLow ?? card.yearLow,
+              yearHigh: live.yearHigh ?? card.yearHigh,
+              peRatio: live.peRatio ?? card.peRatio,
+              divYield: live.divYield || card.divYield,
+              beta: live.beta ?? card.beta,
+              description: live.description || card.description,
+              sparkline: live.sparkline && live.sparkline.length > 3 ? live.sparkline : card.sparkline,
+            };
+          });
+          return { ...prev, [currentCategory]: { ...cat, cards: updatedCards } };
+        });
+
+        // Update table
+        setTableData((prev) => {
+          const rows = prev[currentCategory] || [];
+          const updatedRows = rows.map((row) => {
+            const live = quotesMap[row.ticker];
+            if (!live) return row;
+            return {
+              ...row,
+              price: live.price ?? row.price,
+              changePercent: live.changePercent ?? row.changePercent,
+              changeAmount: live.changeAmount ?? row.changeAmount,
+              volume: live.volume || row.volume,
+              marketCap: live.marketCap || row.marketCap,
+              dayLow: live.dayLow ?? row.dayLow,
+              dayHigh: live.dayHigh ?? row.dayHigh,
+              yearLow: live.yearLow ?? row.yearLow,
+              yearHigh: live.yearHigh ?? row.yearHigh,
+              peRatio: live.peRatio ?? row.peRatio,
+              divYield: live.divYield || row.divYield,
+              beta: live.beta ?? row.beta,
+              description: live.description || row.description,
+            };
+          });
+          return { ...prev, [currentCategory]: updatedRows };
+        });
+      })
+      .catch((err) => {
+        console.warn('[yfinance fetch error]:', err);
+      });
+  }, [currentCategory]);
 
   // Keyboard shortcut listener: Cmd/Ctrl + K to open search, Escape to close
   useEffect(() => {
@@ -152,6 +228,7 @@ export default function App() {
         onOpenAuth={() => setIsAuthOpen(true)}
         liveUpdates={liveUpdates}
         onToggleLive={() => setLiveUpdates(!liveUpdates)}
+        yfinanceConnected={yfinanceConnected}
       />
 
       {/* Main Content Area */}
