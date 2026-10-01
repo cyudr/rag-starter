@@ -13,9 +13,9 @@ const PYTHON_PORT = 5001;
 
 app.use(express.json());
 
-// In-memory cache to prevent yfinance rate limits
+// In-memory cache for live quotes (2 second TTL to enable real-time updates)
 const cache = new Map<string, { timestamp: number; data: any }>();
-const CACHE_TTL_MS = 15000; // 15 seconds
+const CACHE_TTL_MS = 2000; // 2 seconds for real-time live tick updates
 
 function getCached(key: string) {
   const item = cache.get(key);

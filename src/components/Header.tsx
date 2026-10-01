@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Search, Globe, User, ChevronDown, Check, Sparkles, TrendingUp, BarChart2, BookOpen, Layers } from 'lucide-react';
+import { Search, Globe, User, ChevronDown, Check, Sparkles, TrendingUp, BarChart2, BookOpen, Layers, RefreshCw } from 'lucide-react';
 
 interface HeaderProps {
   onOpenSearch: () => void;
@@ -7,6 +7,9 @@ interface HeaderProps {
   liveUpdates: boolean;
   onToggleLive: () => void;
   yfinanceConnected?: boolean;
+  onRefresh?: () => void;
+  lastUpdatedSeconds?: number;
+  isFetching?: boolean;
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -15,6 +18,9 @@ export const Header: React.FC<HeaderProps> = ({
   liveUpdates,
   onToggleLive,
   yfinanceConnected = true,
+  onRefresh,
+  lastUpdatedSeconds = 0,
+  isFetching = false,
 }) => {
   const [activeDropdown, setActiveDropdown] = useState<string | null>(null);
   const [currentLang, setCurrentLang] = useState('EN');
@@ -195,32 +201,40 @@ export const Header: React.FC<HeaderProps> = ({
         </div>
 
         {/* Right Side Utilities */}
-        <div className="flex items-center gap-3 sm:gap-4">
-          {/* Python yfinance backend status */}
-          <div
-            title={yfinanceConnected ? 'Python yfinance backend connected' : 'Python yfinance initializing'}
-            className="hidden lg:flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium border bg-blue-50 text-blue-700 border-blue-200"
-          >
-            <span className="w-2 h-2 rounded-full bg-blue-600 animate-pulse" />
-            <span className="font-semibold">yfinance Python</span>
+        <div className="flex items-center gap-2 sm:gap-3">
+          {/* Live Yahoo Finance Feed status with refresh button */}
+          <div className="flex items-center bg-[#f0f3fa] rounded-full p-1 pl-3 gap-2 border border-gray-200">
+            <div className="flex items-center gap-1.5 text-xs font-semibold text-[#131722]">
+              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+              <span className="hidden sm:inline">Live Yahoo Finance</span>
+              <span className="text-[10px] text-[#787b86] font-normal">
+                {lastUpdatedSeconds === 0 ? 'Just now' : `${lastUpdatedSeconds}s ago`}
+              </span>
+            </div>
+
+            {onRefresh && (
+              <button
+                onClick={onRefresh}
+                title="Refresh live prices from Yahoo Finance"
+                className="p-1 rounded-full hover:bg-white text-[#787b86] hover:text-[#2962ff] transition-colors cursor-pointer"
+                disabled={isFetching}
+              >
+                <RefreshCw className={`w-3.5 h-3.5 ${isFetching ? 'animate-spin text-[#2962ff]' : ''}`} />
+              </button>
+            )}
           </div>
 
-          {/* Live Data Simulation Toggle */}
+          {/* Live Streaming Toggle */}
           <button
             onClick={onToggleLive}
-            title={liveUpdates ? 'Live Market Ticks Active' : 'Live Updates Paused'}
-            className={`hidden md:flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium border transition-colors ${
+            title={liveUpdates ? 'Auto-polling live Yahoo Finance prices every 3s' : 'Live updates paused'}
+            className={`hidden md:flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium border transition-colors ${
               liveUpdates
                 ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
                 : 'bg-gray-50 text-gray-500 border-gray-200'
             }`}
           >
-            <span
-              className={`w-2 h-2 rounded-full ${
-                liveUpdates ? 'bg-emerald-500 animate-pulse' : 'bg-gray-400'
-              }`}
-            />
-            <span>{liveUpdates ? 'Live Ticks' : 'Paused'}</span>
+            <span>{liveUpdates ? 'Auto-Poll On' : 'Paused'}</span>
           </button>
 
           {/* Language Switcher */}
