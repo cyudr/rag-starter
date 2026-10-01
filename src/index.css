@@ -1,0 +1,47 @@
+@import "tailwindcss";
+
+@layer base {
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Trebuchet MS', Roboto, Ubuntu, sans-serif;
+    color: #131722;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    background-color: #ffffff;
+  }
+}
+
+/* Custom gradient for TradingView CTA */
+.tv-btn-gradient {
+  background: linear-gradient(135deg, #1e53e5 0%, #0079ff 50%, #902cfb 100%);
+}
+.tv-btn-gradient:hover {
+  opacity: 0.92;
+}
+
+/* Hide scrollbars for pill nav */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* Price flash animations */
+@keyframes flash-green {
+  0% { background-color: rgba(8, 153, 129, 0.25); }
+  100% { background-color: transparent; }
+}
+
+@keyframes flash-red {
+  0% { background-color: rgba(242, 54, 69, 0.25); }
+  100% { background-color: transparent; }
+}
+
+.flash-up {
+  animation: flash-green 1s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.flash-down {
+  animation: flash-red 1s cubic-bezier(0.16, 1, 0.3, 1);
+}

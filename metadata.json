@@ -1,0 +1,6 @@
+{
+  "name": "TradingView Markets Overview",
+  "description": "Real-time financial market overview, global indices, quotes, sparklines, and interactive financial analysis tools.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
